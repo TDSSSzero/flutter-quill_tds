@@ -288,6 +288,9 @@ class RawEditorState extends EditorState
         RawEditorStateTextInputClientMixin,
         RawEditorStateSelectionDelegateMixin {
   final GlobalKey _editorKey = GlobalKey();
+  GlobalKey get editorKey => _editorKey;
+
+  final GlobalKey translateKey = GlobalKey();
 
   KeyboardVisibilityController? _keyboardVisibilityController;
   StreamSubscription<bool>? _keyboardVisibilitySubscription;
@@ -335,6 +338,7 @@ class RawEditorState extends EditorState
   bool get dirty => _dirty;
   bool _dirty = false;
 
+
   @override
   void insertContent(KeyboardInsertedContent content) {
     assert(widget.contentInsertionConfiguration?.allowedMimeTypes
@@ -350,7 +354,6 @@ class RawEditorState extends EditorState
   List<ContextMenuButtonItem> get contextMenuButtonItems {
     return EditableText.getEditableButtonItems(
       clipboardStatus: _clipboardStatus.value,
-      onLiveTextInput: null,
       onCopy: copyEnabled
           ? () => copySelection(SelectionChangedCause.toolbar)
           : null,
@@ -448,6 +451,7 @@ class RawEditorState extends EditorState
 
   @override
   Widget build(BuildContext context) {
+    print("re build raw editor");
     assert(debugCheckHasMediaQuery(context));
     super.build(context);
 
@@ -459,6 +463,7 @@ class RawEditorState extends EditorState
     }
 
     Widget child = CompositedTransformTarget(
+      key: translateKey,
       link: _toolbarLayerLink,
       child: Semantics(
         child: MouseRegion(
@@ -501,6 +506,7 @@ class RawEditorState extends EditorState
           controller: _scrollController,
           physics: widget.scrollPhysics,
           viewportBuilder: (_, offset) => CompositedTransformTarget(
+            key: translateKey,
             link: _toolbarLayerLink,
             child: MouseRegion(
               cursor: SystemMouseCursors.text,
@@ -1156,6 +1162,10 @@ class RawEditorState extends EditorState
     if (widget.customStyles != null) {
       _styles = _styles!.merge(widget.customStyles!);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      print("didUpdateWidget re build editor, size : ${_editorKey.currentContext!.size}");
+    });
   }
 
   bool _shouldShowSelectionHandles() {

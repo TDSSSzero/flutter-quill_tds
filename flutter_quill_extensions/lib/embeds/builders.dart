@@ -5,17 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart' as base;
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill/translations.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:math_keyboard/math_keyboard.dart';
-import 'package:universal_html/html.dart' as html;
 
-import '../shims/dart_ui_fake.dart'
-    if (dart.library.html) '../shims/dart_ui_real.dart' as ui;
 import 'utils.dart';
 import 'widgets/image.dart';
 import 'widgets/image_resizer.dart';
-import 'widgets/video_app.dart';
-import 'widgets/youtube_video_app.dart';
 
 class ImageEmbedBuilder extends EmbedBuilder {
   @override
@@ -172,51 +165,11 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
   ) {
     final imageUrl = node.value.data;
 
-    ui.platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
-      return html.ImageElement()
-        ..src = imageUrl
-        ..style.height = 'auto'
-        ..style.width = 'auto';
-    });
-
     return ConstrainedBox(
       constraints: constraints ?? BoxConstraints.loose(const Size(200, 200)),
       child: HtmlElementView(
         viewType: imageUrl,
       ),
-    );
-  }
-}
-
-class VideoEmbedBuilder extends EmbedBuilder {
-  VideoEmbedBuilder({this.onVideoInit});
-
-  final void Function(GlobalKey videoContainerKey)? onVideoInit;
-
-  @override
-  String get key => BlockEmbed.videoType;
-
-  @override
-  Widget build(
-    BuildContext context,
-    QuillController controller,
-    base.Embed node,
-    bool readOnly,
-    bool inline,
-    TextStyle textStyle,
-  ) {
-    assert(!kIsWeb, 'Please provide video EmbedBuilder for Web');
-
-    final videoUrl = node.value.data;
-    if (videoUrl.contains('youtube.com') || videoUrl.contains('youtu.be')) {
-      return YoutubeVideoApp(
-          videoUrl: videoUrl, context: context, readOnly: readOnly);
-    }
-    return VideoApp(
-      videoUrl: videoUrl,
-      context: context,
-      readOnly: readOnly,
-      onVideoInit: onVideoInit,
     );
   }
 }
@@ -236,21 +189,10 @@ class FormulaEmbedBuilder extends EmbedBuilder {
   ) {
     assert(!kIsWeb, 'Please provide formula EmbedBuilder for Web');
 
-    final mathController = MathFieldEditingController();
     return Focus(
       onFocusChange: (hasFocus) {
-        if (hasFocus) {
-          // If the MathField is tapped, hides the built in keyboard
-          SystemChannels.textInput.invokeMethod('TextInput.hide');
-          debugPrint(mathController.currentEditingValue());
-        }
       },
-      child: MathField(
-        controller: mathController,
-        variables: const ['x', 'y', 'z'],
-        onChanged: (value) {},
-        onSubmitted: (value) {},
-      ),
+      child: const SizedBox(),
     );
   }
 }
@@ -267,12 +209,6 @@ Widget _menuOptionsForReadonlyImage(
                 color: Colors.greenAccent,
                 text: 'Save'.i18n,
                 onPressed: () {
-                  imageUrl = appendFileExtensionToImageUrl(imageUrl);
-                  GallerySaver.saveImage(imageUrl).then((_) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('Saved'.i18n)));
-                    Navigator.pop(context);
-                  });
                 },
               );
               final zoomOption = _SimpleDialogItem(
